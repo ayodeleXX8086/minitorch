@@ -9,14 +9,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from . import operators
-from .autodiff import Context, Variable, backpropagate
-from .tensor_data import TensorData
-from .tensor_functions import (
+from minitorch import operators
+from minitorch.autodiff import Context, Variable, backpropagate
+from minitorch.tensor_data import TensorData
+from minitorch.tensor_functions import (
     EQ,
     LT,
     Add,
-    All,
     Copy,
     Exp,
     Inv,
@@ -30,7 +29,7 @@ from .tensor_functions import (
     Sigmoid,
     Sum,
     View,
-    tensor,
+    tensor, All,
 )
 
 if TYPE_CHECKING:
@@ -38,9 +37,9 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
 
-    from .tensor_data import Shape, Storage, Strides, UserIndex, UserShape, UserStrides
-    from .tensor_functions import Function
-    from .tensor_ops import TensorBackend
+    from minitorch.tensor_data import Shape, Storage, Strides, UserIndex, UserShape, UserStrides
+    from minitorch.tensor_functions import Function
+    from minitorch.tensor_ops import TensorBackend
 
     TensorLike = Union[float, int, "Tensor"]
 
@@ -60,7 +59,7 @@ class History:
 _tensor_count = 0
 
 
-class Tensor:
+class Tensor(Variable):
     """
     Tensor is a generalization of Scalar in that it is a Variable that
     handles multidimensional arrays.
@@ -70,7 +69,7 @@ class Tensor:
     history: Optional[History]
     grad: Optional[Tensor]
     _tensor: TensorData
-    unique_id: int
+    _unique_id: int
     name: str
 
     def __init__(
@@ -82,7 +81,7 @@ class Tensor:
     ):
         global _tensor_count
         _tensor_count += 1
-        self.unique_id = _tensor_count
+        self._unique_id = _tensor_count
         assert isinstance(v, TensorData)
         assert backend is not None
         self._tensor = v
@@ -214,6 +213,12 @@ class Tensor:
         else:
             return Sum.apply(self, self._ensure_tensor(dim))
 
+    def reduce_add(self, dim) -> Tensor:
+        return self.backend.add_reduce(self, dim)
+
+    def reduce_multiply(self, dim) -> Tensor:
+        return self.backend.mul_reduce(self, dim)
+
     def mean(self, dim: Optional[int] = None) -> Tensor:
         "Compute the mean over dimension `dim`"
         if dim is not None:
@@ -234,6 +239,9 @@ class Tensor:
         return Copy.apply(self)
 
     def __repr__(self) -> str:
+        return self._tensor.to_string()
+
+    def to_string(self):
         return self._tensor.to_string()
 
     def __getitem__(self, key: Union[int, UserIndex]) -> float:

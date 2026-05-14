@@ -5,8 +5,8 @@ from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 
-from .autodiff import Context, Variable, backpropagate, central_difference
-from .scalar_functions import (
+from minitorch.autodiff import Context, Variable, backpropagate, central_difference
+from minitorch.scalar_functions import (
     EQ,
     LT,
     Add,
@@ -47,7 +47,7 @@ class ScalarHistory:
 _var_count = 0
 
 
-class Scalar:
+class Scalar(Variable):
     """
     A reimplementation of scalar values for autodifferentiation
     tracking. Scalar Variables behave as close as possible to standard
@@ -59,7 +59,7 @@ class Scalar:
     history: Optional[ScalarHistory]
     derivative: Optional[float]
     data: float
-    unique_id: int
+    _unique_id: int
     name: str
 
     def __init__(
@@ -70,7 +70,7 @@ class Scalar:
     ):
         global _var_count
         _var_count += 1
-        self.unique_id = _var_count
+        self._unique_id = _var_count
         self.data = float(v)
         self.history = back
         self.derivative = None
@@ -80,7 +80,14 @@ class Scalar:
             self.name = str(self.unique_id)
 
     def __repr__(self) -> str:
-        return "Scalar(%f)" % self.data
+        return "Scalar(%f, %s)" % (self.data, self._unique_id)
+
+    @property
+    def unique_id(self) -> int:
+        return self._unique_id
+
+    def __str__(self):
+        return f"Unique_id: {self._unique_id}"
 
     def __mul__(self, b: ScalarLike) -> Scalar:
         return Mul.apply(self, b)
@@ -93,52 +100,55 @@ class Scalar:
 
     def __add__(self, b: ScalarLike) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, b)
 
     def __bool__(self) -> bool:
         return bool(self.data)
 
     def __lt__(self, b: ScalarLike) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return LT.apply(self, b)
 
     def __gt__(self, b: ScalarLike) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return 1 - LT.apply(self, b) - EQ.apply(self, b)
 
     def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return EQ.apply(self, b)
 
     def __sub__(self, b: ScalarLike) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, Neg.apply(b))
+
+    def __rsub__(self, other):
+        return Add.apply(other, Neg.apply(self))
 
     def __neg__(self) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Neg.apply(self)
 
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
 
     def __rmul__(self, b: ScalarLike) -> Scalar:
-        return self * b
+        return Mul.apply(b, self)
 
     def log(self) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Log.apply(self)
 
     def exp(self) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Exp.apply(self)
 
     def sigmoid(self) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Sigmoid.apply(self)
 
     def relu(self) -> Scalar:
         # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return ReLU.apply(self)
 
     # Variable elements for backprop
 
@@ -173,8 +183,8 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        # TODO: Implement for Task 1.3.
-        raise NotImplementedError('Need to implement for Task 1.3')
+        grad: Tuple[float,...] = h.last_fn._backward(h.ctx, d_output)
+        return zip(h.inputs, grad)
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """

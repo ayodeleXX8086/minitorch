@@ -1,7 +1,7 @@
 from typing import Sequence
 
-from .module import Parameter
-from .scalar import Scalar
+from minitorch.module import Parameter
+from minitorch.scalar import Scalar
 
 
 class Optimizer:

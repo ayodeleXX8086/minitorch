@@ -10,7 +10,7 @@ import minitorch
 class Network(minitorch.Module):
     def __init__(self):
         super().__init__()
-        self.linear = Linear(2, 1)
+        self.add_module("layer1", Linear(2, 1))
 
     def forward(self, x):
         y = self.linear(x)

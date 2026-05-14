@@ -9,7 +9,7 @@ import numpy.typing as npt
 from numpy import array, float64
 from typing_extensions import TypeAlias
 
-from .operators import prod
+from minitorch.operators import prod, mul, sum as sum_op, reduce, zipWith
 
 MAX_DIMS = 32
 
@@ -42,9 +42,8 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
-
-    # TODO: Implement for Task 2.1.
-    raise NotImplementedError('Need to implement for Task 2.1')
+    lst = [mul(index[i], strides[i]) for i in range(len(index))]
+    return int(sum_op(lst))
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -60,8 +59,11 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    # TODO: Implement for Task 2.1.
-    raise NotImplementedError('Need to implement for Task 2.1')
+    length = len(out_index)
+    for idx in reversed(range(length)):
+        out_index[idx] = ordinal % shape[idx]
+        ordinal = ordinal//shape[idx]
+
 
 
 def broadcast_index(
@@ -101,8 +103,22 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     Raises:
         IndexingError : if cannot broadcast
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError('Need to implement for Task 2.2')
+    output_shape = [0] * max(len(shape1), len(shape2))
+    for i in range(len(output_shape)):
+        if i < len(shape1) and i < len(shape2):
+            x, y = shape1[len(shape1) - 1 - i], shape2[len(shape2) - 1 - i]
+            if x != 0 and y != 0 and (x == y or x == 1 or y == 1):
+                output_shape[len(output_shape) - 1 - i] = max(x, y)
+            else:
+                raise RuntimeError(f"Shape not recognized either {x} or {y} at dimension {i}")
+        else:
+            shape = max(shape1, shape2, key=len)
+            output_shape[len(shape) - 1 - i] = shape[len(shape) - 1 - i]
+    return output_shape
+
+
+
+
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
@@ -137,7 +153,7 @@ class TensorData:
             strides = strides_from_shape(shape)
 
         assert isinstance(strides, tuple), "Strides must be tuple"
-        assert isinstance(shape, tuple), "Shape must be tuple"
+        assert isinstance(shape, Sequence), "Shape must be tuple"
         if len(strides) != len(shape):
             raise IndexingError(f"Len of strides {strides} must match {shape}.")
         self._strides = array(strides)
@@ -173,7 +189,7 @@ class TensorData:
     def index(self, index: Union[int, UserIndex]) -> int:
         if isinstance(index, int):
             aindex: Index = array([index])
-        if isinstance(index, tuple):
+        if isinstance(index, (tuple, list)):
             aindex = array(index)
 
         # Pretend 0-dim shape is 1-dim shape of singleton
@@ -193,6 +209,10 @@ class TensorData:
         # Call fast indexing.
         return index_to_position(array(index), self._strides)
 
+    def zeros(self, shape: UserShape) -> 'TensorData':
+        length = reduce(lambda a,b: a*b, start=1)(shape)
+        return TensorData([0.0]*int(length), shape)
+
     def indices(self) -> Iterable[UserIndex]:
         lshape: Shape = array(self.shape)
         out_index: Index = array(self.shape)
@@ -211,7 +231,7 @@ class TensorData:
         self._storage[self.index(key)] = val
 
     def tuple(self) -> Tuple[Storage, Shape, Strides]:
-        return (self._storage, self._shape, self._strides)
+        return self._storage, self._shape, self._strides
 
     def permute(self, *order: int) -> TensorData:
         """
@@ -226,9 +246,10 @@ class TensorData:
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
+        new_shape = tuple(self.shape[i] for i in order)
+        new_strides = tuple(self.strides[i] for i in order)
 
-        # TODO: Implement for Task 2.1.
-        raise NotImplementedError('Need to implement for Task 2.1')
+        return TensorData(self._storage, shape=new_shape, strides=new_strides)
 
     def to_string(self) -> str:
         s = ""
@@ -244,8 +265,10 @@ class TensorData:
             s += f"{v:3.2f}"
             l = ""
             for i in range(len(index) - 1, -1, -1):
-                if index[i] == self.shape[i] - 1:
-                    l += "]"
+                if i == 0 and index[i] == self.shape[i] - 1:
+                    l+="\n]"
+                elif index[i] == self.shape[i] - 1:
+                    l += "],"
                 else:
                     break
             if l:
@@ -253,3 +276,14 @@ class TensorData:
             else:
                 s += " "
         return s
+
+
+if __name__ == "__main__":
+    tensor = TensorData([1,2,3,4,5,6,7,8], [2,4])
+    print(tensor.get([0,1]))
+    print(tensor.to_string())
+    print(list(tensor.indices()))
+    tensor1 = tensor.permute(1,0)
+    print(tensor1.to_string())
+    print(list(tensor1.indices()))
+    print(tensor.to_string())

@@ -3,8 +3,6 @@ from typing import Callable, Tuple
 import pytest
 from hypothesis import given
 from hypothesis.strategies import DrawFn, composite, floats
-
-import minitorch
 from minitorch import (
     MathTestVariable,
     Scalar,
@@ -13,7 +11,7 @@ from minitorch import (
     operators,
 )
 
-from .strategies import assert_close, small_floats
+from tests.strategies import assert_close, small_floats
 
 
 @composite
@@ -21,7 +19,7 @@ def scalars(
     draw: DrawFn, min_value: float = -100000, max_value: float = 100000
 ) -> Scalar:
     val = draw(floats(min_value=min_value, max_value=max_value))
-    return minitorch.Scalar(val)
+    return Scalar(val)
 
 
 small_scalars = scalars(min_value=-100, max_value=100)
@@ -63,7 +61,7 @@ def test_simple(a: float, b: float) -> None:
 
     # Simple relu
     c = Scalar(a).relu() + Scalar(b).relu()
-    assert_close(c.data, minitorch.operators.relu(a) + minitorch.operators.relu(b))
+    assert_close(c.data, operators.relu(a) + operators.relu(b))
 
     # Add others if you would like...
 
@@ -78,6 +76,7 @@ def test_one_args(
     fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], t1: Scalar
 ) -> None:
     name, base_fn, scalar_fn = fn
+    print("Base function ", base_fn.__name__, "Scaler fun ", scalar_fn.__name__, "Data : ", t1)
     assert_close(scalar_fn(t1).data, base_fn(t1.data))
 
 
@@ -105,6 +104,7 @@ def test_one_derivative(
     fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], t1: Scalar
 ) -> None:
     name, _, scalar_fn = fn
+    print("Function ", name, "Scalar func", scalar_fn)
     derivative_check(scalar_fn, t1)
 
 
@@ -117,4 +117,5 @@ def test_two_derivative(
     t2: Scalar,
 ) -> None:
     name, _, scalar_fn = fn
+    print("FN3", name, _, scalar_fn)
     derivative_check(scalar_fn, t1, t2)

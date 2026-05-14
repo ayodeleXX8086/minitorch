@@ -22,8 +22,12 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError('Need to implement for Task 1.1')
+    plus_values_lst=list(vals)
+    neg_values_lst = list(vals)
+    plus_values_lst[arg]+=epsilon
+    neg_values_lst[arg]-=epsilon
+    result = (f(*plus_values_lst)-f(*neg_values_lst))/(2*epsilon)
+    return result
 
 
 variable_count = 1
@@ -61,9 +65,49 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    # visited = set()
+    # order = []
+    # def dfs(node):
+    #     if node.unique_id in visited or node.is_constant():
+    #         return
+    #     visited.add(node.unique_id)
+    #     for parent in node.parents:
+    #         dfs(parent)
+    #
+    #     order.append(node)
+    #
+    # dfs(variable)
+    # """
+    # b=a*a*a
+    # ...
+    # where (a*a)=z
+    # b=a*(a*a)
+    # b=[a, z]
+    # z=[a]
+    # [b, z, a]
+    # """
+    # return reversed(order)
+    visited = set()
+    order = []
+    stack = [(variable, False)]  # (node, processed_flag)
 
+    while stack:
+        node, processed = stack.pop()
+
+        if node.unique_id in visited or node.is_constant():
+            continue
+
+        if processed:
+            visited.add(node.unique_id)
+            order.append(node)
+        else:
+            # Post-order: process after parents
+            stack.append((node, True))
+            for parent in node.parents:
+                if parent.unique_id not in visited and not parent.is_constant():
+                    stack.append((parent, False))
+
+    return reversed(order)
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
     """
@@ -76,8 +120,18 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    lst: List[Variable] = list(topological_sort(variable))
+    grads = {variable.unique_id: deriv}
+    for dep in lst:
+        if dep.unique_id not in grads:
+            continue
+        d_output = grads[dep.unique_id]
+        if dep.is_leaf():
+            dep.accumulate_derivative(d_output)
+        else:
+            for node, grad in dep.chain_rule(d_output):
+                grads[node.unique_id]=grads.get(node.unique_id, 0)+grad
+
 
 
 @dataclass
@@ -98,3 +152,12 @@ class Context:
     @property
     def saved_tensors(self) -> Tuple[Any, ...]:
         return self.saved_values
+
+
+if __name__ == "__main__":
+    inv_func = lambda x: 1/x
+    derivative = lambda x: -1/(x*x)
+    x = 3
+    print(inv_func(x))
+    print(central_difference(inv_func, x,), derivative(x))
+    print(abs(central_difference(inv_func, x, )-derivative(x))<1e-6)

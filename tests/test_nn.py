@@ -4,8 +4,8 @@ from hypothesis import given
 import minitorch
 from minitorch import Tensor
 
-from .strategies import assert_close
-from .tensor_strategies import tensors
+from minitorch.strategies import assert_close
+from minitorch.tensor_strategies import tensors
 
 
 @pytest.mark.task4_3

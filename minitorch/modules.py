@@ -1,6 +1,6 @@
-# from .tensor import rand
-# from .functions import matmul, conv2d
-# from .module import Module, Parameter
+# from minitorch.tensor import rand
+# from minitorch.functions import matmul, conv2d
+# from minitorch.module import Module, Parameter
 
 
 # class tLinear(Module):

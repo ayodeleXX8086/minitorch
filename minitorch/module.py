@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 
@@ -16,12 +17,12 @@ class Module:
     """
 
     _modules: Dict[str, Module]
-    _parameters: Dict[str, Parameter]
+    _parameters: OrderedDict[str, Parameter]
     training: bool
 
     def __init__(self) -> None:
         self._modules = {}
-        self._parameters = {}
+        self._parameters = OrderedDict()
         self.training = True
 
     def modules(self) -> Sequence[Module]:
@@ -32,12 +33,15 @@ class Module:
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        self.training = True
+        for module in self.modules():
+            module.train()
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        self.training = False
+        for module in self.modules():
+            module.eval()
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -48,12 +52,20 @@ class Module:
             The name and `Parameter` of each ancestor parameter.
         """
         # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        return [(param.name, param) for param in self.parameters()]
 
-    def parameters(self) -> Sequence[Parameter]:
-        "Enumerate over all the parameters of this module and its descendents."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+    def parameters(self):
+        # collect all parameters from this module
+        out = list(self._parameters.values())
+        # recursively collect from submodules
+        for m in self._modules.values():
+            out.extend(m.parameters())
+        return out
+
+    def add_module(self, name, module):
+        self._modules[name] = module
+        setattr(self, name, module)  # optional: keeps Python attribute
+        return module
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """

@@ -14,7 +14,7 @@ from hypothesis.strategies import (
 import minitorch
 from minitorch import Tensor, TensorBackend, TensorData, UserIndex, UserShape
 
-from .strategies import small_ints
+from tests.strategies import small_ints
 
 settings.register_profile("ci", deadline=None)
 settings.load_profile("ci")

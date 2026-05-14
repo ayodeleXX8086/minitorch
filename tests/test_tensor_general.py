@@ -9,8 +9,8 @@ from hypothesis.strategies import DataObject, data, integers, lists, permutation
 import minitorch
 from minitorch import MathTestVariable, Tensor, TensorBackend, grad_check
 
-from .strategies import assert_close, small_floats
-from .tensor_strategies import assert_close_tensor, shaped_tensors, tensors
+from tests.strategies import assert_close, small_floats
+from tests.tensor_strategies import assert_close_tensor, shaped_tensors, tensors
 
 one_arg, two_arg, red_arg = MathTestVariable._comp_testing()
 
@@ -20,7 +20,7 @@ one_arg, two_arg, red_arg = MathTestVariable._comp_testing()
 
 SimpleBackend = minitorch.TensorBackend(minitorch.SimpleOps)
 FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
-shared: Dict[str, TensorBackend] = {"fast": FastTensorBackend}
+shared: Dict[str, TensorBackend] = {"fast": SimpleBackend}
 
 # ## Task 3.1
 backend_tests = [pytest.param("fast", marks=pytest.mark.task3_1)]

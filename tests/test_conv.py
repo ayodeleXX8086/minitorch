@@ -4,7 +4,7 @@ from hypothesis import given, settings
 import minitorch
 from minitorch import Tensor
 
-from .tensor_strategies import tensors
+from minitorch.tensor_strategies import tensors
 
 
 @pytest.mark.task4_1

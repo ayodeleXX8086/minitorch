@@ -1,13 +1,13 @@
 import time
 
-import graph_builder
-import interface.plots as plots
+import project.interface.plots as plots
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
 import minitorch
+from project.graph_builder import GraphBuilder
 
 
 def render_train_interface(
@@ -43,7 +43,7 @@ def render_train_interface(
     def get_train(hidden_layers):
         train = TrainCls(hidden_layers)
         one_output = train.run_one(dataset.X[0])
-        G = graph_builder.GraphBuilder().run(one_output)
+        G = GraphBuilder().run(one_output)
         return nx.nx_pydot.to_pydot(G).to_string()
 
     train = TrainCls(hidden_layers)
@@ -124,7 +124,7 @@ def render_train_interface(
         df.append({"epoch": epoch, "loss": total_loss, "correct": correct})
         st_epoch_stats.write(pd.DataFrame(reversed(df)))
 
-        st_epoch_image.plotly_chart(plot())
+        st_epoch_image.plotly_chart(plot(), key=f"epoch_plot_{epoch}")
         if hasattr(train, "train"):
             loss_graph = go.Scatter(mode="lines", x=list(range(len(losses))), y=losses)
             fig = go.Figure(loss_graph)

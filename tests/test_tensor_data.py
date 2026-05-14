@@ -5,7 +5,7 @@ from hypothesis.strategies import DataObject, data
 import minitorch
 from minitorch import TensorData
 
-from .tensor_strategies import indices, tensor_data
+from minitorch.tensor_strategies import indices, tensor_data
 
 # ## Tasks 2.1
 
